@@ -51,10 +51,10 @@ function save_to_excel(r::Int, data::DataFrame, file_name::String)
             XLSX.setdata!(sheet, 1, i, header)  # Write header to the first row
         end
 
-        # Write the data manually
+        # Write the data manually, row by row
         for row in 1:size(data, 1)
-            for (col, value) in enumerate(Tables.rowvalues(data, row))
-                XLSX.setdata!(sheet, row + 1, col, value)  # Write data starting from row 2
+            for col in 1:size(data, 2)
+                XLSX.setdata!(sheet, row + 1, col, data[row, col])  # Write data starting from row 2
             end
         end
     end
@@ -107,4 +107,3 @@ file_name = readline()
 
 # Display and save the proteoforms and transitions for the given r
 display_and_save_transitions(r, file_name)
-
