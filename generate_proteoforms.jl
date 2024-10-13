@@ -5,13 +5,13 @@ using XLSX  # For saving the output as an Excel file
 function generate_proteoform_dict(r::Int)
     num_states = 2^r  # Total possible proteoforms (2^r)
     proteoforms = [bitstring(i) for i in 0:(num_states - 1)]  # Generate binary strings for all states
-    proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r
+    proteoforms = [lpad(p, r, '0')[end-r+1:end] for p in proteoforms]  # Ensure all strings are length r
 
     # Create dictionary: map PF IDs to binary structures
     proteoform_dict = Dict{String, String}()
     for i in 1:num_states
         PF = "PF$(lpad(i, 3, '0'))"  # Proteoform ID (e.g., PF001, PF002)
-        structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure
+        structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure, separated by commas
         proteoform_dict[PF] = structure
     end
     return proteoform_dict
@@ -34,18 +34,11 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         # Only allow stepwise transitions (±1 in k_value)
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
-            # Debugging: Print the new structure before checking if it exists
-            println("Checking structure: $new_struct_str")
-            
             if haskey(proteoform_dict, current_pf)  # Check if current_pf exists in dictionary
                 allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
                 if allowed_pf !== nothing && allowed_pf != ""  # Skip invalid or non-existent keys
                     push!(allowed, allowed_pf)
-                else
-                    println("Invalid transition found: $new_struct_str")  # Debugging statement
                 end
-            else
-                println("Key not found in proteoform_dict: $current_pf")  # Debugging statement
             end
         end
     end
@@ -67,14 +60,12 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
 
     # Generate allowed transitions for each proteoform
     allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
-    println("Allowed transitions: $allowed")  # Debugging print for allowed transitions
 
     # Ensure no empty keys in allowed transitions by filtering out any empty substrings
     allowed_clean = [join(filter(x -> x != "", split(allowed[i], ", ")), ", ") for i in 1:num_states]
 
     # Convert substrings to strings for barred transitions and avoid empty strings
     barred = [join(find_barred_transitions(PF[i], [string(x) for x in split(allowed_clean[i], ", ")], PF), ", ") for i in 1:num_states]
-    println("Barred transitions: $barred")  # Debugging print for barred transitions
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
