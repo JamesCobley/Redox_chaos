@@ -43,8 +43,8 @@ end
 function save_to_excel(r::Int, data::DataFrame, file_name::String)
     # Open or create the Excel file
     XLSX.openxlsx(file_name, mode="w") do file
-        # Write the DataFrame contents to the default sheet (no need to add a new sheet)
-        XLSX.writetable(file, Tables.columntable(data); header=names(data))
+        sheet = XLSX.getsheet(file, 1)  # Access the first sheet
+        XLSX.writetable!(sheet, Tables.columntable(data), header=names(data))  # Correctly use the writetable! function
     end
     println("Excel file saved successfully as $file_name.")
 end
