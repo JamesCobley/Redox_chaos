@@ -39,22 +39,19 @@ function find_barred_transitions(proteoform::String, allowed_transitions::Vector
     return [pf for pf in proteoforms if !(pf in allowed_transitions)]
 end
 
-# Function to save the data into an Excel file
+# Function to save the data into an Excel file using write!
 function save_to_excel(r::Int, data::DataFrame, file_name::String)
     # Open or create the Excel file
     XLSX.openxlsx(file_name, mode="w") do file
         sheet = XLSX.getsheet(file, 1)  # Access the first sheet
-        
-        # Write the headers manually
-        headers = names(data)
-        for (i, header) in enumerate(headers)
-            XLSX.writecell!(sheet, header, 1, i)  # Write header to the first row
+        # Write the headers
+        for (i, header) in enumerate(names(data))
+            XLSX.write!(sheet, 1, i, header)  # Write header in the first row
         end
-
-        # Write the data
+        # Write the data rows
         for row in 1:size(data, 1)
             for (col, value) in enumerate(Tables.rowvalues(data, row))
-                XLSX.writecell!(sheet, value, row + 1, col)  # Write data starting from row 2
+                XLSX.write!(sheet, row + 1, col, value)  # Write data from the second row onwards
             end
         end
     end
