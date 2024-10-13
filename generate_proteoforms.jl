@@ -1,5 +1,6 @@
 using DataFrames
 using XLSX  # For saving the output as an Excel file
+using FilePathsBase  # For handling and creating file paths
 
 # Function to generate the proteoform transitions based on the number of cysteines (r)
 function generate_proteoforms(r::Int)
@@ -14,25 +15,23 @@ function generate_proteoforms(r::Int)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
     # Binary structure of proteoforms (0=reduced, 1=oxidized)
-    structure = [join([string(c) for c in p[1:r]], ",") for p in proteoforms]  # Limit structure to r elements
+    structure = [join([string(c) for c in split(p, "")], ",") for p in proteoforms]  # Correct binary structure
 
-    # Function to find allowed transitions (stepwise +1 or -1 in k_value, conserving site info)
+    # Function to find allowed transitions (stepwise +1 or -1 in k_value, considering both positions)
     function find_allowed_transitions(structure::String, r::Int)
         current_k = count(c -> c == '1', split(structure, ","))  # Count of current oxidized cysteines
         allowed = []
         struct_vec = split(structure, ",")  # Turn the structure into an array of substrings
 
-        # First, act on the first cysteine, then move to the second cysteine if needed
+        # Check for stepwise changes at each cysteine
         for i in 1:r
             # Toggle the i-th cysteine between oxidized ("1") and reduced ("0")
-            if i == 1 || (i == 2 && struct_vec[1] == "1")  # Only act on 2nd if 1st is already oxidized
-                new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
-                new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
+            new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
+            new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
 
-                # Ensure only +1 or -1 transitions in k_value
-                if abs(new_k - current_k) == 1
-                    push!(allowed, join(new_structure, ","))  # Join new structure back into "0,1", etc.
-                end
+            # Ensure only +1 or -1 transitions in k_value, and consider both positions
+            if abs(new_k - current_k) == 1
+                push!(allowed, join(new_structure, ","))  # Join new structure back into "0,1", etc.
             end
         end
         return allowed
@@ -76,6 +75,12 @@ end
 
 # Function to save DataFrame to Excel
 function save_to_excel(df::DataFrame, file_path::String)
+    # Ensure that the directory exists
+    dir_path = FilePath(file_path).parent  # Extract directory path
+    if !isdir(dir_path)
+        mkdir(dir_path)  # Create the directory if it doesn't exist
+    end
+
     try
         XLSX.openxlsx(file_path, mode="w") do workbook
             sheet = XLSX.addsheet(workbook, "Proteoforms")
