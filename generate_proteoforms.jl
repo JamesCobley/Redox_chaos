@@ -34,11 +34,18 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         # Only allow stepwise transitions (±1 in k_value)
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
+            # Debugging: Print the new structure before checking if it exists
+            println("Checking structure: $new_struct_str")
             
-            # Check if the new structure exists in the dictionary before lookup
-            allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
-            if allowed_pf !== nothing  # Skip invalid or non-existent keys
-                push!(allowed, allowed_pf)
+            if haskey(proteoform_dict, current_pf)  # Check if current_pf exists in dictionary
+                allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
+                if allowed_pf !== nothing && allowed_pf != ""  # Skip invalid or non-existent keys
+                    push!(allowed, allowed_pf)
+                else
+                    println("Invalid transition found: $new_struct_str")  # Debugging statement
+                end
+            else
+                println("Key not found in proteoform_dict: $current_pf")  # Debugging statement
             end
         end
     end
@@ -58,14 +65,16 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
     k_value = [count(c -> c == '1', proteoform_dict[pf]) for pf in PF]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
-    # Generate allowed and barred transitions for each proteoform
+    # Generate allowed transitions for each proteoform
     allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
+    println("Allowed transitions: $allowed")  # Debugging print for allowed transitions
 
-    # Filter and clean the allowed transitions to remove any empty strings
+    # Ensure no empty keys in allowed transitions by filtering out any empty substrings
     allowed_clean = [join(filter(x -> x != "", split(allowed[i], ", ")), ", ") for i in 1:num_states]
 
     # Convert substrings to strings for barred transitions and avoid empty strings
     barred = [join(find_barred_transitions(PF[i], [string(x) for x in split(allowed_clean[i], ", ")], PF), ", ") for i in 1:num_states]
+    println("Barred transitions: $barred")  # Debugging print for barred transitions
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
