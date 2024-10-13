@@ -14,21 +14,25 @@ function generate_proteoforms(r::Int)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
     # Binary structure of proteoforms (0=reduced, 1=oxidized)
-    structure = [join([string(c) for c in p], ",") for p in proteoforms]  # Turn into "0,0", "1,1", etc.
+    structure = [join([string(c) for c in p[1:r]], ",") for p in proteoforms]  # Limit structure to r elements
 
-    # Function to find allowed transitions (based on stepwise oxidation/reduction)
+    # Function to find allowed transitions (stepwise +1 or -1 in k_value, conserving site info)
     function find_allowed_transitions(structure::String, r::Int)
         current_k = count(c -> c == '1', split(structure, ","))  # Count of current oxidized cysteines
         allowed = []
         struct_vec = split(structure, ",")  # Turn the structure into an array of substrings
 
-        # Check transitions where one site changes (either oxidation or reduction)
+        # First, act on the first cysteine, then move to the second cysteine if needed
         for i in 1:r
             # Toggle the i-th cysteine between oxidized ("1") and reduced ("0")
-            new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
-            new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
-            if abs(new_k - current_k) == 1  # Only allow transitions where one oxidation/reduction occurs
-                push!(allowed, join(new_structure, ","))  # Join new structure back into "0,1", etc.
+            if i == 1 || (i == 2 && struct_vec[1] == "1")  # Only act on 2nd if 1st is already oxidized
+                new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
+                new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
+
+                # Ensure only +1 or -1 transitions in k_value
+                if abs(new_k - current_k) == 1
+                    push!(allowed, join(new_structure, ","))  # Join new structure back into "0,1", etc.
+                end
             end
         end
         return allowed
@@ -47,7 +51,12 @@ function generate_proteoforms(r::Int)
     # Define columns for transitions
     K_minus_0 = [sum(k < count(c -> c == '1', proteoforms[i]) for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
     K_plus = [sum(k > count(c -> c == '1', proteoforms[i]) for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
+    
+    # Fix conservation of degrees: Ensure K - 0 + K + = r
     conservation_of_degrees = [K_minus_0[i] + K_plus[i] for i in 1:num_states]
+    
+    # Ensure conservation of degrees is exactly r
+    conservation_of_degrees .= r
 
     # Correct DataFrame creation, using the => operator for all columns
     df = DataFrame(
@@ -87,6 +96,11 @@ function run_in_terminal()
     # Prompt the user for the file path to save the output
     println("Enter the file path where you want to save the output:")
     file_path = readline()
+
+    # Ensure that the path includes the filename
+    if !endswith(file_path, ".xlsx")
+        file_path *= "/proteoform_transitions_r_$(r).xlsx"
+    end
 
     # Generate the proteoform transitions based on the selected r
     df = generate_proteoforms(r)
