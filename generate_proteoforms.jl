@@ -20,15 +20,15 @@ function generate_proteoforms(r::Int)
     function find_allowed_transitions(structure::String, r::Int)
         current_k = count(c -> c == '1', split(structure, ","))  # Count of current oxidized cysteines
         allowed = []
-        struct_vec = split(structure, ",")  # Turn back into an array of characters
+        struct_vec = split(structure, ",")  # Turn the structure into an array of substrings
 
         # Check transitions where one site changes (either oxidation or reduction)
         for i in 1:r
             # Toggle the i-th cysteine between oxidized ("1") and reduced ("0")
-            new_structure = struct_vec[1:i-1] * (struct_vec[i] == "0" ? "1" : "0") * struct_vec[i+1:end]
+            new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
             new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
             if abs(new_k - current_k) == 1  # Only allow transitions where one oxidation/reduction occurs
-                push!(allowed, join(new_structure, ","))  # Join as "0,1", etc.
+                push!(allowed, join(new_structure, ","))  # Join new structure back into "0,1", etc.
             end
         end
         return allowed
