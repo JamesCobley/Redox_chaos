@@ -17,7 +17,7 @@ function generate_proteoforms(r::Int)
     # Binary structure of proteoforms (0=reduced, 1=oxidized)
     structure = [replace(p, '0' => '0', '1' => '1') for p in proteoforms]
 
-    # Function to find allowed transitions (±1 oxidation/reduction)
+    # Function to find allowed transitions (+/- 1 oxidation/reduction)
     function find_allowed_transitions(struct)
         current_k = count(c -> c == '1', struct)
         allowed = []
