@@ -55,8 +55,8 @@ function display_transitions(r::Int)
 
         # Print information for each proteoform
         println("PF$(lpad(i, 3, '0')): $proteoform, k_value: $k_value, Percent Oxidation: $percent_ox%")
-        println("  Allowed transitions: $(join(allowed_transitions, \", \"))")  # Correct syntax
-        println("  Barred transitions: $(join(barred_transitions, \", \"))")   # Correct syntax
+        println("  Allowed transitions: $(join(allowed_transitions, ", "))")  # Fixed the join function
+        println("  Barred transitions: $(join(barred_transitions, ", "))")   # Fixed the join function
         println("  K - 0: $K_minus_0, K +: $K_plus, Conservation of degrees: $conservation_of_degrees")
         println()
     end
@@ -71,3 +71,4 @@ r = parse(Int, readline())
 
 # Display the proteoforms and transitions for the given r
 display_transitions(r)
+
