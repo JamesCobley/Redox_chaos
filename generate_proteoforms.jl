@@ -6,13 +6,18 @@ function generate_proteoforms(r::Int)
     return proteoforms
 end
 
-# Function to display the generated proteoforms
+# Function to display the generated proteoforms in order and print the total number
 function display_proteoforms(r::Int)
     proteoforms = generate_proteoforms(r)
     println("Generated proteoforms for r = $r:")
-    for pf in proteoforms
-        println(pf)
+    
+    # Print each proteoform in order
+    for (i, pf) in enumerate(proteoforms)
+        println("PF$(lpad(i, 3, '0')): $pf")
     end
+    
+    # Print the total number of proteoforms
+    println("\nTotal number of proteoforms: $(length(proteoforms))")
 end
 
 # Prompt the user for the number of cysteines (r)
