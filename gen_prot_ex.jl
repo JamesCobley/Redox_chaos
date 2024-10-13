@@ -44,7 +44,19 @@ function save_to_excel(r::Int, data::DataFrame, file_name::String)
     # Open or create the Excel file
     XLSX.openxlsx(file_name, mode="w") do file
         sheet = XLSX.getsheet(file, 1)  # Access the first sheet
-        XLSX.writetable!(sheet, Tables.columntable(data), header=names(data))  # Correctly use the writetable! function
+        
+        # Write the headers manually
+        headers = names(data)
+        for (i, header) in enumerate(headers)
+            XLSX.writecell!(sheet, header, 1, i)  # Write header to the first row
+        end
+
+        # Write the data
+        for row in 1:size(data, 1)
+            for (col, value) in enumerate(Tables.rowvalues(data, row))
+                XLSX.writecell!(sheet, value, row + 1, col)  # Write data starting from row 2
+            end
+        end
     end
     println("Excel file saved successfully as $file_name.")
 end
