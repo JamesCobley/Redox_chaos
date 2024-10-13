@@ -1,20 +1,52 @@
 using DataFrames
 using XLSX  # For saving the output as an Excel file
 
-# Function to generate the proteoform dictionary based on the number of cysteines (r)
+# Function to generate the proteoform dictionary based on binomial distribution of redox states
 function generate_proteoform_dict(r::Int)
     num_states = 2^r  # Total possible proteoforms (2^r)
     proteoforms = [bitstring(i) for i in 0:(num_states - 1)]  # Generate binary strings for all states
-    proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r (capped at r cysteines)
+    proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r
 
     # Create dictionary: map PF IDs to binary structures
-    proteoform_dict = Dict{String, String}()  # Explicitly typed as Dict{String, String}
+    proteoform_dict = Dict{String, String}()
     for i in 1:num_states
-        PF = "PF$(lpad(i, 3, '0'))"  # PF001, PF002, ...
-        structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure like "0,0", "1,0", etc.
+        PF = "PF$(lpad(i, 3, '0'))"  # Proteoform ID (e.g., PF001, PF002)
+        structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure
         proteoform_dict[PF] = structure
     end
     return proteoform_dict
+end
+
+# Function to find allowed transitions
+function find_allowed_transitions(proteoform_dict::Dict{String, String}, current_pf::String, r::Int)
+    current_structure = proteoform_dict[current_pf]
+    struct_vec = split(current_structure, ",")  # Split into array for each cysteine state
+    allowed = []
+
+    current_k = count(c -> c == "1", struct_vec)  # Number of oxidized cysteines
+
+    # Loop over each cysteine and toggle between oxidized ("1") and reduced ("0")
+    for i in 1:r
+        new_structure = copy(struct_vec)  # Copy the structure
+        new_structure[i] = (new_structure[i] == "0" ? "1" : "0")  # Toggle the i-th cysteine
+        new_k = count(c -> c == "1", new_structure)  # Recalculate the oxidation count
+
+        # Only allow stepwise transitions (±1 in k_value)
+        if abs(new_k - current_k) == 1
+            new_struct_str = join(new_structure, ",")
+            allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, keys(proteoform_dict))
+            if allowed_pf !== nothing
+                push!(allowed, allowed_pf)
+            end
+        end
+    end
+
+    return allowed
+end
+
+# Function to find barred transitions
+function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String}, PF::Vector{String})
+    return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
 end
 
 # Function to generate allowed and barred transitions
@@ -24,51 +56,9 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
     k_value = [count(c -> c == '1', proteoform_dict[pf]) for pf in PF]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
-    # Debugging - Print dictionary and keys
-    println("Proteoform Dictionary:")
-    println(proteoform_dict)
-
-    # Function to find allowed transitions (stepwise +1 or -1 in k_value, considering both positions)
-    function find_allowed_transitions(current_structure::String)
-        current_k = count(c -> c == '1', split(current_structure, ","))  # Count current oxidized cysteines
-        allowed = []
-        struct_vec = split(current_structure, ",")  # Turn structure into an array of substrings
-
-        # Check for stepwise changes at each cysteine position
-        for i in 1:r
-            # Toggle the i-th cysteine between oxidized ("1") and reduced ("0")
-            new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
-            new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
-
-            # Only allow transitions with ±1 change in k_value and no side swaps
-            if abs(new_k - current_k) == 1
-                new_struct_str = join(new_structure, ",")  # Convert back to "0,1", etc.
-                allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, PF)
-                if allowed_pf !== nothing  # Only push valid transitions
-                    push!(allowed, PF[allowed_pf])
-                end
-            end
-        end
-        return allowed
-    end
-
-    # Generate allowed and barred transitions
-    allowed = [join(find_allowed_transitions(proteoform_dict[pf]), ", ") for pf in PF]
-
-    # Check if any empty strings exist in allowed transitions
-    println("Allowed Transitions:")
-    println(allowed)
-
-    # Function to find barred transitions
-    function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String})
-        return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
-    end
-
-    barred = [join(find_barred_transitions(PF[i], [String(x) for x in split(allowed[i], ", ")]), ", ") for i in 1:num_states]
-
-    # Check if any empty strings exist in barred transitions
-    println("Barred Transitions:")
-    println(barred)
+    # Generate allowed and barred transitions for each proteoform
+    allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
+    barred = [join(find_barred_transitions(PF[i], split(allowed[i], ", "), PF), ", ") for i in 1:num_states]
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
@@ -137,3 +127,4 @@ end
 
 # Call the function to run in terminal
 run_in_terminal()
+
