@@ -10,8 +10,7 @@ function generate_proteoforms(r::Int)
     proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r
 
     # Define DataFrame columns
-    # Use BigInt to handle the large binary strings safely
-    PF = ["PF$(lpad(BigInt(parse(BigInt, p, base=2)) + 1, 3, '0'))" for p in proteoforms]  
+    PF = ["PF$(lpad(BigInt(parse(BigInt, p, base=2)) + 1, 3, '0'))" for p in proteoforms]  # Use BigInt here
     k_value = [count(c -> c == '1', p) for p in proteoforms]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
@@ -35,7 +34,6 @@ function generate_proteoforms(r::Int)
     end
 
     # Generate allowed and barred transitions
-    # Use BigInt when parsing binary strings to avoid overflow
     allowed = [join(["PF$(lpad(BigInt(parse(BigInt, b, base=2)) + 1, 3, '0'))" for b in find_allowed_transitions(p, r)], ", ") for p in proteoforms]
 
     # Function to find barred transitions
@@ -43,7 +41,8 @@ function generate_proteoforms(r::Int)
         return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
     end
 
-    barred = [join(find_barred_transitions(PF[i], split(allowed[i], ", ")), ", ") for i in 1:num_states]
+    # Convert SubString to String in split results to avoid type mismatch
+    barred = [join(find_barred_transitions(PF[i], [String(x) for x in split(allowed[i], ", ")]), ", ") for i in 1:num_states]
 
     # Define columns for transitions
     K_minus_0 = [sum(k < current_k for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
