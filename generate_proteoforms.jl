@@ -10,7 +10,7 @@ function generate_proteoforms(r::Int)
     proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r
 
     # Define DataFrame columns
-    PF = ["PF$(lpad(i + 1, 3, '0'))" for i in 0:(num_states - 1)]
+    PF = ["PF$(lpad(BigInt(parse(Int, p, base=2)) + 1, 3, '0'))" for p in proteoforms]  # Use BigInt here
     k_value = [count(c -> c == '1', p) for p in proteoforms]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
@@ -34,7 +34,7 @@ function generate_proteoforms(r::Int)
     end
 
     # Generate allowed and barred transitions
-    allowed = [join(["PF$(lpad(parse(Int, b, base=2) + 1, 3, '0'))" for b in find_allowed_transitions(p, r)], ", ") for p in proteoforms]
+    allowed = [join(["PF$(lpad(BigInt(parse(Int, b, base=2)) + 1, 3, '0'))" for b in find_allowed_transitions(p, r)], ", ") for p in proteoforms]
 
     # Function to find barred transitions
     function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String})
@@ -88,3 +88,4 @@ end
         println("Please provide a valid file path to save the file.")
     end
 end
+
