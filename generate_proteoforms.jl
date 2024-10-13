@@ -1,7 +1,7 @@
 using DataFrames
 using XLSX  # For saving the output as an Excel file
 
-# Function to generate the proteoform dictionary based on binomial distribution of redox states
+# Function to generate the proteoform dictionary based on the number of cysteines (r)
 function generate_proteoform_dict(r::Int)
     num_states = 2^r  # Total possible proteoforms (2^r)
     proteoforms = [bitstring(i) for i in 0:(num_states - 1)]  # Generate binary strings for all states
@@ -17,7 +17,7 @@ function generate_proteoform_dict(r::Int)
     return proteoform_dict
 end
 
-# Function to find allowed transitions
+# Function to find allowed transitions and directly structure them with `;`
 function find_allowed_transitions(proteoform_dict::Dict{String, String}, current_pf::String, r::Int)
     current_structure = proteoform_dict[current_pf]
     struct_vec = split(current_structure, ",")  # Split into array for each cysteine state
@@ -35,20 +35,21 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
             
-            # Correct the lookup using string keys for proteoform_dict
-            allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
+            # Lookup the proteoform with the new structure
+            allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
             if allowed_pf !== nothing && allowed_pf != ""  # Skip invalid or non-existent keys
                 push!(allowed, allowed_pf)
             end
         end
     end
 
-    return allowed
+    return join(allowed, ";")  # Return allowed transitions separated by `;`
 end
 
-# Function to find barred transitions
-function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String}, PF::Vector{String})
-    return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
+# Function to find barred transitions and directly structure them with `;`
+function find_barred_transitions(current_pf::String, allowed_pfs::String, PF::Vector{String})
+    allowed_list = split(allowed_pfs, ";")  # Split allowed proteoforms by `;`
+    return join([pf for pf in PF if !(pf in allowed_list) && pf != current_pf], ";")
 end
 
 # Function to generate allowed and barred transitions
@@ -58,18 +59,13 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
     k_value = [count(c -> c == '1', proteoform_dict[pf]) for pf in PF]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
-    # Generate allowed transitions for each proteoform
-    allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
-
-    # Ensure no empty keys in allowed transitions by filtering out any empty substrings
-    allowed_clean = [join(filter(x -> x != "", split(allowed[i], ", ")), ", ") for i in 1:num_states]
-
-    # Convert substrings to strings for barred transitions and avoid empty strings
-    barred = [join(find_barred_transitions(PF[i], [string(x) for x in split(allowed_clean[i], ", ")], PF), ", ") for i in 1:num_states]
+    # Generate allowed and barred transitions for each proteoform
+    allowed = [find_allowed_transitions(proteoform_dict, PF[i], r) for i in 1:num_states]
+    barred = [find_barred_transitions(PF[i], allowed[i], PF) for i in 1:num_states]
 
     # Calculate K - 0 and K + for transitions
-    K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
-    K_plus = [sum(k > k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
+    K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ";")]) for i in 1:num_states]
+    K_plus = [sum(k > k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ";")]) for i in 1:num_states]
 
     # Ensure conservation of degrees is equal to r
     conservation_of_degrees = [K_minus_0[i] + K_plus[i] for i in 1:num_states]
@@ -80,7 +76,7 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
         "k_value" => k_value,
         "Percent (OX)" => percent_ox,
         "Structure" => collect(values(proteoform_dict)),  # Proteoform structure from the dictionary
-        "Allowed" => allowed_clean,
+        "Allowed" => allowed,
         "Barred" => barred,
         "K - 0" => K_minus_0,
         "K +" => K_plus,
