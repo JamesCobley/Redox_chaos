@@ -6,9 +6,9 @@ function generate_proteoforms(r::Int)
     return proteoforms
 end
 
-# Function to find allowed transitions for each proteoform
+# Function to find allowed transitions for each proteoform (including the "self" transition)
 function find_allowed_transitions(proteoform::String, proteoforms::Vector{String}, r::Int)
-    allowed = []
+    allowed = [proteoform]  # Include the proteoform itself as an allowed transition (self)
     struct_vec = collect(proteoform)  # Split the proteoform into an array of '0's and '1's
 
     # Current k_value (number of oxidized cysteines)
@@ -31,8 +31,9 @@ function find_allowed_transitions(proteoform::String, proteoforms::Vector{String
 end
 
 # Function to find barred transitions for each proteoform
+# Barred transitions are all proteoforms not in the allowed set
 function find_barred_transitions(proteoform::String, allowed_transitions::Vector{String}, proteoforms::Vector{String})
-    return [pf for pf in proteoforms if !(pf in allowed_transitions) && pf != proteoform]
+    return [pf for pf in proteoforms if !(pf in allowed_transitions)]
 end
 
 # Function to display the proteoforms, allowed/barred transitions, and conservation of degrees
@@ -48,15 +49,15 @@ function display_transitions(r::Int)
         allowed_transitions = find_allowed_transitions(proteoform, proteoforms, r)
         barred_transitions = find_barred_transitions(proteoform, allowed_transitions, proteoforms)
 
-        # Calculate Conservation of Degrees
+        # Calculate Conservation of Degrees (r + 1 includes self)
         K_minus_0 = sum(k < k_value for k in [count(c -> c == '1', pf) for pf in allowed_transitions])
         K_plus = sum(k > k_value for k in [count(c -> c == '1', pf) for pf in allowed_transitions])
-        conservation_of_degrees = K_minus_0 + K_plus
+        conservation_of_degrees = K_minus_0 + K_plus + 1  # Adding 1 for the "self" transition
 
         # Print information for each proteoform
         println("PF$(lpad(i, 3, '0')): $proteoform, k_value: $k_value, Percent Oxidation: $percent_ox%")
-        println("  Allowed transitions: $(join(allowed_transitions, ", "))")  # Fixed the join function
-        println("  Barred transitions: $(join(barred_transitions, ", "))")   # Fixed the join function
+        println("  Allowed transitions: $(join(allowed_transitions, \", \"))")
+        println("  Barred transitions: $(join(barred_transitions, \", \"))")
         println("  K - 0: $K_minus_0, K +: $K_plus, Conservation of degrees: $conservation_of_degrees")
         println()
     end
@@ -71,4 +72,3 @@ r = parse(Int, readline())
 
 # Display the proteoforms and transitions for the given r
 display_transitions(r)
-
