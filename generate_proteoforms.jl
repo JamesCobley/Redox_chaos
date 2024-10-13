@@ -24,6 +24,10 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
     k_value = [count(c -> c == '1', proteoform_dict[pf]) for pf in PF]  # Count of oxidized cysteines (1s)
     percent_ox = [100 * k / r for k in k_value]  # Percentage of oxidation
 
+    # Debugging - Print dictionary and keys
+    println("Proteoform Dictionary:")
+    println(proteoform_dict)
+
     # Function to find allowed transitions (stepwise +1 or -1 in k_value, considering both positions)
     function find_allowed_transitions(current_structure::String)
         current_k = count(c -> c == '1', split(current_structure, ","))  # Count current oxidized cysteines
@@ -51,12 +55,20 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
     # Generate allowed and barred transitions
     allowed = [join(find_allowed_transitions(proteoform_dict[pf]), ", ") for pf in PF]
 
+    # Check if any empty strings exist in allowed transitions
+    println("Allowed Transitions:")
+    println(allowed)
+
     # Function to find barred transitions
     function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String})
         return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
     end
 
     barred = [join(find_barred_transitions(PF[i], [String(x) for x in split(allowed[i], ", ")]), ", ") for i in 1:num_states]
+
+    # Check if any empty strings exist in barred transitions
+    println("Barred Transitions:")
+    println(barred)
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
