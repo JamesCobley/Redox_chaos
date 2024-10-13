@@ -34,11 +34,11 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         # Only allow stepwise transitions (±1 in k_value)
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
-            if haskey(proteoform_dict, current_pf)  # Check if current_pf exists in dictionary
-                allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
-                if allowed_pf !== nothing && allowed_pf != ""  # Skip invalid or non-existent keys
-                    push!(allowed, allowed_pf)
-                end
+            
+            # Correct the lookup using string keys for proteoform_dict
+            allowed_pf = findfirst(x -> haskey(proteoform_dict, x) && proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
+            if allowed_pf !== nothing && allowed_pf != ""  # Skip invalid or non-existent keys
+                push!(allowed, allowed_pf)
             end
         end
     end
