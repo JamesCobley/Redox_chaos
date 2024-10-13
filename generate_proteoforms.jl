@@ -17,16 +17,17 @@ function generate_proteoforms(r::Int)
     # Binary structure of proteoforms (0=reduced, 1=oxidized)
     structure = [replace(p, '0' => '0', '1' => '1') for p in proteoforms]
 
-    # Define allowed transitions (moving +/- 1 oxidation/reduction step)
-    function find_allowed_transitions(struct::String, r::Int)
-        current_k = count(c -> c == '1', struct)
+    # Function to find allowed transitions (based on stepwise oxidation/reduction)
+    function find_allowed_transitions(structure::String, r::Int)
+        current_k = count(c -> c == '1', structure)  # Count of current oxidized cysteines
         allowed = []
         # Check transitions where one site changes (either oxidation or reduction)
         for i in 1:r
-            new_struct = struct[1:i-1] * (struct[i] == '0' ? "1" : "0") * struct[i+1:end]
-            new_k = count(c -> c == '1', new_struct)
-            if abs(new_k - current_k) == 1  # Only allow stepwise transitions
-                push!(allowed, new_struct)
+            # Toggle the i-th cysteine between oxidized ("1") and reduced ("0")
+            new_structure = structure[1:i-1] * (structure[i] == '0' ? "1" : "0") * structure[i+1:end]
+            new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
+            if abs(new_k - current_k) == 1  # Only allow transitions where one oxidation/reduction occurs
+                push!(allowed, new_structure)
             end
         end
         return allowed
@@ -36,7 +37,7 @@ function generate_proteoforms(r::Int)
     allowed = [join(["PF$(lpad(parse(Int, b, base=2) + 1, 3, '0'))" for b in find_allowed_transitions(p, r)], ", ") for p in proteoforms]
 
     # Function to find barred transitions
-    function find_barred_transitions(current_pf, allowed_pfs)
+    function find_barred_transitions(current_pf::String, allowed_pfs::Vector{String})
         return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
     end
 
