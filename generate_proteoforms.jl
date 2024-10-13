@@ -1,6 +1,6 @@
 using DataFrames
-using Interact   # For creating interactive widgets
-using XLSX       # For saving the output as an Excel file
+using Interact  # For creating the interactive widget
+using XLSX      # For saving the output as an Excel file
 
 # Function to generate the proteoform transitions based on the number of cysteines (r)
 function generate_proteoforms(r::Int)
@@ -63,22 +63,27 @@ function generate_proteoforms(r::Int)
     return df
 end
 
-# Interactive widget to select r and file path
-@manipulate for r in 1:10, file_path = textbox("Enter file path (including filename): ", "proteoform_transitions_r_$(r).xlsx")
+# Interactive widget using Interact.jl
+@manipulate for r in 1:10, file_path = textbox("Enter the file path:")
     # Generate the proteoform transitions based on the selected r
     df = generate_proteoforms(r)
 
     # Display the DataFrame
     display(df)
 
-    # Save the DataFrame to an Excel file at the specified path
-    try
-        XLSX.openxlsx(file_path, mode="w") do workbook
-            sheet = XLSX.addsheet(workbook, "Proteoforms")
-            XLSX.writetable(sheet, collect(eachcol(df)), header=names(df))
+    # Save the DataFrame to an Excel file
+    if !isempty(file_path)
+        file_name = "$(file_path)/proteoform_transitions_r_$(r).xlsx"
+        try
+            XLSX.openxlsx(file_name, mode="w") do workbook
+                sheet = XLSX.addsheet(workbook, "Proteoforms")
+                XLSX.writetable(sheet, collect(eachcol(df)), header=names(df))
+            end
+            println("Excel file saved as $file_name")
+        catch e
+            println("Error saving the file: $e")
         end
-        println("Excel file saved at $file_path")
-    catch e
-        println("Error saving file: ", e)
+    else
+        println("Please provide a valid file path to save the file.")
     end
 end
