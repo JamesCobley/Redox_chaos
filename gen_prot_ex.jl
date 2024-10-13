@@ -41,9 +41,11 @@ end
 
 # Function to save the data into an Excel file
 function save_to_excel(r::Int, data::DataFrame, file_name::String)
+    # Open or create the Excel file
     XLSX.openxlsx(file_name, mode="w") do file
-        sheet = XLSX.addsheet(file, "Proteoforms")
-        XLSX.writetable(sheet, collect(eachcol(data)), header=names(data))
+        # Write the DataFrame contents to the sheet
+        sheet_name = "Proteoforms"
+        XLSX.writetable(file, collect(eachcol(data)), header=names(data), sheetname=sheet_name)
     end
     println("Excel file saved successfully as $file_name.")
 end
