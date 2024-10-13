@@ -8,7 +8,7 @@ function generate_proteoform_dict(r::Int)
     proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r (capped at r cysteines)
 
     # Create dictionary: map PF IDs to binary structures
-    proteoform_dict = Dict()
+    proteoform_dict = Dict{String, String}()  # Explicitly typing as Dict{String, String}
     for i in 1:num_states
         PF = "PF$(lpad(i, 3, '0'))"  # PF001, PF002, ...
         structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure like "0,0", "1,0", etc.
