@@ -34,7 +34,8 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         # Only allow stepwise transitions (±1 in k_value)
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
-            allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, keys(proteoform_dict))
+            # Use collect(keys(proteoform_dict)) to get a valid array of keys
+            allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
             if allowed_pf !== nothing
                 push!(allowed, allowed_pf)
             end
@@ -127,4 +128,3 @@ end
 
 # Call the function to run in terminal
 run_in_terminal()
-
