@@ -55,8 +55,8 @@ function display_transitions(r::Int)
 
         # Print information for each proteoform
         println("PF$(lpad(i, 3, '0')): $proteoform, k_value: $k_value, Percent Oxidation: $percent_ox%")
-        println("  Allowed transitions: $(join(allowed_transitions, \", \"))")  # Fix: Use double quotes for the separator
-        println("  Barred transitions: $(join(barred_transitions, \", \"))")   # Fix: Use double quotes for the separator
+        println("  Allowed transitions: $(join(allowed_transitions, \", \"))")  # Correct syntax
+        println("  Barred transitions: $(join(barred_transitions, \", \"))")   # Correct syntax
         println("  K - 0: $K_minus_0, K +: $K_plus, Conservation of degrees: $conservation_of_degrees")
         println()
     end
