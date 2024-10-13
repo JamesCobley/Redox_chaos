@@ -1,6 +1,5 @@
 using DataFrames
-using Interact  # For creating the interactive widget
-using XLSX      # For saving the output as an Excel file
+using XLSX  # For saving the output as an Excel file
 
 # Function to generate the proteoform transitions based on the number of cysteines (r)
 function generate_proteoforms(r::Int)
@@ -45,8 +44,8 @@ function generate_proteoforms(r::Int)
     barred = [join(find_barred_transitions(PF[i], [String(x) for x in split(allowed[i], ", ")]), ", ") for i in 1:num_states]
 
     # Define columns for transitions
-    K_minus_0 = [sum(k < current_k for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
-    K_plus = [sum(k > current_k for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
+    K_minus_0 = [sum(k < count(c -> c == '1', proteoforms[i]) for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
+    K_plus = [sum(k > count(c -> c == '1', proteoforms[i]) for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
     conservation_of_degrees = [K_minus_0[i] + K_plus[i] for i in 1:num_states]
 
     # Create the DataFrame
@@ -65,12 +64,21 @@ function generate_proteoforms(r::Int)
     return df
 end
 
-# Interactive widget using Interact.jl
-@manipulate for r in 1:10, file_path = textbox("Enter the file path:")
+# Function to run the script in a terminal without widgets
+function run_in_terminal()
+    # Prompt the user for the number of cysteines (r)
+    println("Enter the number of cysteines (r):")
+    r = parse(Int, readline())
+
+    # Prompt the user for the file path to save the output
+    println("Enter the file path where you want to save the output:")
+    file_path = readline()
+
     # Generate the proteoform transitions based on the selected r
     df = generate_proteoforms(r)
 
     # Display the DataFrame
+    println("Generated DataFrame:")
     display(df)
 
     # Save the DataFrame to an Excel file
@@ -89,3 +97,6 @@ end
         println("Please provide a valid file path to save the file.")
     end
 end
+
+# Call the function to run in terminal
+run_in_terminal()
