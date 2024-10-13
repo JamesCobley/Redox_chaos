@@ -34,9 +34,8 @@ function find_allowed_transitions(proteoform_dict::Dict{String, String}, current
         # Only allow stepwise transitions (±1 in k_value)
         if abs(new_k - current_k) == 1
             new_struct_str = join(new_structure, ",")
-            # Use collect(keys(proteoform_dict)) to get a valid array of keys
             allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, collect(keys(proteoform_dict)))
-            if allowed_pf !== nothing
+            if allowed_pf !== nothing  # Skip invalid keys
                 push!(allowed, allowed_pf)
             end
         end
@@ -59,12 +58,15 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
 
     # Generate allowed and barred transitions for each proteoform
     allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
-    # Convert substrings to strings using string(x) for barred transitions
-    barred = [join(find_barred_transitions(PF[i], [string(x) for x in split(allowed[i], ", ")], PF), ", ") for i in 1:num_states]
+
+    # Ensure no empty keys in allowed transitions by filtering out any empty substrings
+    allowed_clean = [join(filter(x -> x != "", split(allowed[i], ", ")), ", ") for i in 1:num_states]
+
+    barred = [join(find_barred_transitions(PF[i], split(allowed_clean[i], ", "), PF), ", ") for i in 1:num_states]
 
     # Calculate K - 0 and K + for transitions
-    K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
-    K_plus = [sum(k > k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
+    K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
+    K_plus = [sum(k > k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed_clean[i], ", ")]) for i in 1:num_states]
 
     # Ensure conservation of degrees is equal to r
     conservation_of_degrees = [K_minus_0[i] + K_plus[i] for i in 1:num_states]
@@ -75,7 +77,7 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
         "k_value" => k_value,
         "Percent (OX)" => percent_ox,
         "Structure" => collect(values(proteoform_dict)),  # Proteoform structure from the dictionary
-        "Allowed" => allowed,
+        "Allowed" => allowed_clean,
         "Barred" => barred,
         "K - 0" => K_minus_0,
         "K +" => K_plus,
@@ -129,3 +131,4 @@ end
 
 # Call the function to run in terminal
 run_in_terminal()
+
