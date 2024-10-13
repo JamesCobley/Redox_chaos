@@ -1,4 +1,5 @@
-using XLSX  # To save the output as an Excel file
+using XLSX  # For saving the output to Excel
+using DataFrames  # For creating a DataFrame
 
 # Function to generate binary proteoforms based on the number of cysteines (r)
 function generate_proteoforms(r::Int)
@@ -52,7 +53,7 @@ function display_and_save_transitions(r::Int, file_name::String)
     proteoforms = generate_proteoforms(r)
     println("Generated proteoforms for r = $r:")
     
-    # Prepare a DataFrame to store the data
+    # Initialize a DataFrame to store the data
     data = DataFrame(PF = String[], k_value = Int[], Percent_OX = Float64[], Structure = String[], 
                      Allowed = String[], Barred = String[], K_minus_0 = Int[], K_plus = Int[], Conservation_of_degrees = Int[])
 
