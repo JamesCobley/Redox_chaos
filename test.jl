@@ -2,8 +2,8 @@ using XLSX
 using Random
 
 # Manually set general POX and PRED values (applies to all proteoforms)
-POX = 0.5  # Probability of oxidation
-PRED = 0.5  # Probability of reduction
+POX = 0.7  # Probability of oxidation
+PRED = 0.1  # Probability of reduction
 
 # Load proteoform matrix from Excel file
 function load_proteoforms(file_path::String)
@@ -69,8 +69,8 @@ function main()
     file_path = "path_to_your_excel_file.xlsx"  # Adjust this to your actual file path
     proteoforms = load_proteoforms(file_path)
 
-    molecules = 2000  # Number of molecules
-    steps = 2000  # Number of steps
+    molecules = 100  # Number of molecules
+    steps = 20  # Number of steps
 
     final_population = run_simulation(proteoforms, molecules, steps)
     
