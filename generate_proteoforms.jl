@@ -52,13 +52,13 @@ function generate_proteoforms(r::Int)
     df = DataFrame(
         PF = PF,
         k_value = k_value,
-        "Percent (OX)" = percent_ox,
+        Percent_OX = percent_ox,  # Changed to valid symbol format
         Structure = structure,
         Allowed = allowed,
         Barred = barred,
-        "K - 0" = K_minus_0,
-        "K +" = K_plus,
-        "Conservation of degrees" = conservation_of_degrees
+        K_minus_0 = K_minus_0,
+        K_plus = K_plus,
+        Conservation_of_degrees = conservation_of_degrees
     )
     
     return df
