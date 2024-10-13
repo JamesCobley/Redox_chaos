@@ -18,7 +18,7 @@ function generate_proteoforms(r::Int)
     structure = [replace(p, '0' => '0', '1' => '1') for p in proteoforms]
 
     # Function to find allowed transitions (+/- 1 oxidation/reduction)
-    function find_allowed_transitions(struct)
+    function find_allowed_transitions(struct, r)
         current_k = count(c -> c == '1', struct)
         allowed = []
         # Check transitions where one site changes (either oxidation or reduction)
@@ -33,7 +33,7 @@ function generate_proteoforms(r::Int)
     end
 
     # Generate allowed and barred transitions
-    allowed = [join(["PF$(lpad(parse(Int, b, base=2) + 1, 3, '0'))" for b in find_allowed_transitions(p)], ", ") for p in proteoforms]
+    allowed = [join(["PF$(lpad(parse(Int, b, base=2) + 1, 3, '0'))" for b in find_allowed_transitions(p, r)], ", ") for p in proteoforms]
 
     # Function to find barred transitions
     function find_barred_transitions(current_pf, allowed_pfs)
@@ -87,3 +87,4 @@ end
         println("Please provide a valid file path to save the file.")
     end
 end
+
