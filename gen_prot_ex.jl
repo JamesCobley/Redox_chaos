@@ -43,9 +43,9 @@ end
 function save_to_excel(r::Int, data::DataFrame, file_name::String)
     # Open or create the Excel file
     XLSX.openxlsx(file_name, mode="w") do file
-        # Write the DataFrame contents to the sheet
-        sheet_name = "Proteoforms"
-        XLSX.writetable(file, collect(eachcol(data)), header=names(data), sheetname=sheet_name)
+        # Write the DataFrame contents to a sheet
+        sheet = XLSX.addsheet(file, "Proteoforms")
+        XLSX.writetable!(sheet, Tables.columntable(data); header=names(data))  # Fix: Correct use of header
     end
     println("Excel file saved successfully as $file_name.")
 end
@@ -96,3 +96,4 @@ file_name = readline()
 
 # Display and save the proteoforms and transitions for the given r
 display_and_save_transitions(r, file_name)
+
