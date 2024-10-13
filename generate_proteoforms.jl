@@ -49,7 +49,7 @@ function generate_proteoforms(r::Int)
     K_plus = [sum(k > count(c -> c == '1', proteoforms[i]) for k in [count(c -> c == '1', p) for p in split(allowed[i], ", ")]) for i in 1:num_states]
     conservation_of_degrees = [K_minus_0[i] + K_plus[i] for i in 1:num_states]
 
-    # Create the DataFrame with the correct "Percent (OX)" column name
+    # Create the DataFrame with the correct column names using the => operator
     df = DataFrame(
         PF = PF,
         k_value = k_value,
@@ -57,9 +57,9 @@ function generate_proteoforms(r::Int)
         Structure = structure,
         Allowed = allowed,
         Barred = barred,
-        "K - 0" = K_minus_0,
-        "K +" = K_plus,
-        "Conservation of degrees" = conservation_of_degrees
+        "K - 0" => K_minus_0,          # Use => to specify column names with spaces and special characters
+        "K +" => K_plus,               # Same here
+        "Conservation of degrees" => conservation_of_degrees
     )
     
     return df
@@ -101,5 +101,3 @@ end
 
 # Call the function to run in terminal
 run_in_terminal()
-
-
