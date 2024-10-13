@@ -59,7 +59,8 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
 
     # Generate allowed and barred transitions for each proteoform
     allowed = [join(find_allowed_transitions(proteoform_dict, PF[i], r), ", ") for i in 1:num_states]
-    barred = [join(find_barred_transitions(PF[i], split(allowed[i], ", "), PF), ", ") for i in 1:num_states]
+    # Convert substrings to strings using string(x) for barred transitions
+    barred = [join(find_barred_transitions(PF[i], [string(x) for x in split(allowed[i], ", ")], PF), ", ") for i in 1:num_states]
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
