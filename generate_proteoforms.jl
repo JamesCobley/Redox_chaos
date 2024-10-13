@@ -1,6 +1,5 @@
 using DataFrames
 using XLSX  # For saving the output as an Excel file
-using FilePathsBase  # For handling and creating file paths
 
 # Function to generate the proteoform transitions based on the number of cysteines (r)
 function generate_proteoforms(r::Int)
@@ -75,12 +74,6 @@ end
 
 # Function to save DataFrame to Excel
 function save_to_excel(df::DataFrame, file_path::String)
-    # Ensure that the directory exists
-    dir_path = FilePath(file_path).parent  # Extract directory path
-    if !isdir(dir_path)
-        mkdir(dir_path)  # Create the directory if it doesn't exist
-    end
-
     try
         XLSX.openxlsx(file_path, mode="w") do workbook
             sheet = XLSX.addsheet(workbook, "Proteoforms")
