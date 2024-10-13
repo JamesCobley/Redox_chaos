@@ -8,7 +8,7 @@ function generate_proteoform_dict(r::Int)
     proteoforms = [lpad(p, r, '0') for p in proteoforms]  # Ensure all strings are length r (capped at r cysteines)
 
     # Create dictionary: map PF IDs to binary structures
-    proteoform_dict = Dict{String, String}()  # Explicitly typing as Dict{String, String}
+    proteoform_dict = Dict{String, String}()  # Explicitly typed as Dict{String, String}
     for i in 1:num_states
         PF = "PF$(lpad(i, 3, '0'))"  # PF001, PF002, ...
         structure = join([string(c) for c in split(proteoforms[i], "")], ",")  # Binary structure like "0,0", "1,0", etc.
@@ -36,7 +36,7 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
             new_structure = vcat(struct_vec[1:i-1], (struct_vec[i] == "0" ? "1" : "0"), struct_vec[i+1:end])
             new_k = count(c -> c == '1', new_structure)  # Recompute the oxidation count
 
-            # Only allow transitions with ±1 change in k_value
+            # Only allow transitions with ±1 change in k_value and no side swaps
             if abs(new_k - current_k) == 1
                 new_struct_str = join(new_structure, ",")  # Convert back to "0,1", etc.
                 allowed_pf = findfirst(x -> proteoform_dict[x] == new_struct_str, PF)
@@ -56,7 +56,7 @@ function generate_transitions(proteoform_dict::Dict{String, String}, r::Int)
         return [pf for pf in PF if !(pf in allowed_pfs) && pf != current_pf]
     end
 
-    barred = [join(find_barred_transitions(PF[i], split(allowed[i], ", ")), ", ") for i in 1:num_states]
+    barred = [join(find_barred_transitions(PF[i], [String(x) for x in split(allowed[i], ", ")]), ", ") for i in 1:num_states]
 
     # Calculate K - 0 and K + for transitions
     K_minus_0 = [sum(k < k_value[i] for k in [count(c -> c == '1', proteoform_dict[pf]) for pf in split(allowed[i], ", ")]) for i in 1:num_states]
