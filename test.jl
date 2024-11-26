@@ -66,7 +66,7 @@ end
 
 # Main function
 function main()
-    file_path = "https://github.com/JamesCobley/Redox_chaos/blob/main/proteoforms_r3.xlsx"  # Adjust this to your actual file path
+    file_path = "/Users/jamescobley/Redox_chaos/Redox_chaos/James.xlsx"  # Adjust this to your actual file path
     proteoforms = load_proteoforms(file_path)
 
     molecules = 100  # Number of molecules
