@@ -166,12 +166,16 @@ steps = 1000
 p_jump = 0.3
 epsilon = 1e-5
 
+# Run Simulation
 history, proteoforms, entropies, mean_oxidation_states = simulate(r, initial_proteoform, steps, p_jump)
 lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, p_jump, epsilon)
 
 println("Computed Lyapunov Exponent: ", lyapunov)
+
+# Save Results
 save_history(history, proteoforms)
 save_metrics(steps, entropies, mean_oxidation_states)
 
+# Generate Plots
 plot_poincare(history, proteoforms, 10)
 plot_bifurcation(r, initial_proteoform, steps, 0.1, 0.9, 50)
