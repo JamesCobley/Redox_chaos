@@ -4,4 +4,4 @@ Non-linear systems redox dynamics in the setting of cysteine redox proteoforms.
 # Using the code
 Clone the https://github.com/JamesCobley/Redox_Chaos into your environment
 # Contact
-Please contact James 
+Please contact James Cobley (j_cobley@yahoo.com)
