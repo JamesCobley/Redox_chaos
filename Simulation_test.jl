@@ -144,9 +144,11 @@ end
 # Simulate System
 function simulate(r::Int, initial_proteoform::String, steps::Int, p_jump::Float64)
     state, proteoforms = initialize_state(r, initial_proteoform)
-    history = []
-    entropies = []
-    mean_oxidation_states = []
+    
+    # Correctly initialize with explicit types
+    history = Vector{Dict{String, Float64}}()
+    entropies = Float64[]
+    mean_oxidation_states = Float64[]
 
     for _ in 1:steps
         push!(history, deepcopy(state))
@@ -166,10 +168,13 @@ steps = 1000
 p_jump = 0.3
 epsilon = 1e-5
 
-# Run Simulation
 history, proteoforms, entropies, mean_oxidation_states = simulate(r, initial_proteoform, steps, p_jump)
-lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, p_jump, epsilon)
 
+# Check type for debugging
+println("Type of history: ", typeof(history))
+
+# Compute Lyapunov Exponent
+lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, p_jump, epsilon)
 println("Computed Lyapunov Exponent: ", lyapunov)
 
 # Save Results
