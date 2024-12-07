@@ -147,7 +147,7 @@ p_jump = 0.3
 epsilon = 1e-5
 
 # Run Simulation
-history, proteoforms, entropies, mean_oxidation_states, _ = simulate(r, initial_proteoform, steps, p_jump)
+history, proteoforms, entropies, mean_oxidation_states = simulate(r, initial_proteoform, steps, p_jump)
 lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, p_jump, epsilon)
 
 println("Computed Lyapunov Exponent: ", lyapunov)
@@ -158,11 +158,14 @@ save_metrics(steps, entropies, mean_oxidation_states)
 
 # Plot Results
 plot_poincare(history, proteoforms, 10)
-plot(range(1, steps), mean_oxidation_states, title="Mean Oxidation State Over Time", xlabel="Time Step", ylabel="Mean Oxidation State (k)")
+
+plot(range(1, steps), mean_oxidation_states, 
+     title="Mean Oxidation State Over Time", xlabel="Time Step", ylabel="Mean Oxidation State (k)")
 savefig("mean_oxidation_state.png")
 
-plot(range(1, steps), entropies, title="Entropy Over Time", xlabel="Time Step", ylabel="Shannon Entropy")
+plot(range(1, steps), entropies, 
+     title="Entropy Over Time", xlabel="Time Step", ylabel="Shannon Entropy")
 savefig("entropy_over_time.png")
 
-# Bifurcation Diagram
+# Generate Bifurcation Diagram
 plot_bifurcation(r, initial_proteoform, steps, 0.1, 0.9, 50)
