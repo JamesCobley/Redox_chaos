@@ -165,19 +165,21 @@ function simulate(r::Int, initial_proteoform::String, steps::Int, p_jump::Float6
     return history, proteoforms, entropies, mean_oxidation_states
 end
 
-# Main Execution
-r = 3
-initial_proteoform = "000"
-steps = 10000
-p_jump = 0.3
-epsilon = 1e-5
+# Main Execution with More Molecules
+r = 3                        # Number of cysteines
+initial_proteoform = "000"   # Starting proteoform
+steps = 10_000               # Simulation time
+num_molecules = 1_000        # Adjust number of molecules
+epsilon = 1e-5               # Perturbation for Lyapunov exponent
 
-history, proteoforms, entropies, mean_oxidation_states = simulate(r, initial_proteoform, steps, p_jump)
+# Run the Simulation with More Molecules
+history, proteoforms, entropies, mean_oxidation_states = simulate_with_P_matrix(r, initial_proteoform, steps, num_molecules)
 
+# Debugging Output
 println("Type of history: ", typeof(history))
 
 # Compute Lyapunov Exponent
-lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, p_jump, epsilon)
+lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, 0.3, epsilon)
 println("Computed Lyapunov Exponent: ", lyapunov)
 
 # Save Results
