@@ -168,7 +168,7 @@ end
 # Main Execution
 r = 3
 initial_proteoform = "000"
-steps = 1000
+steps = 10000
 p_jump = 0.3
 epsilon = 1e-5
 
