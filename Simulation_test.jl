@@ -1,8 +1,9 @@
-# Redox Proteoform Chaos Simulation
+# Sumulation Test
 # Author: [James Cobley]
-# Description: Models a redox proteoform system with saving features for plots and data files.
+# Description: Models a redox proteoform system, computes the Lyapunov exponent,
+# generates plots, and saves data files.
 
-using Plots, Random, CSV, DataFrames
+using Plots, Random, CSV, DataFrames, Statistics
 
 # Set the working directory (default to the current directory)
 output_dir = pwd()
