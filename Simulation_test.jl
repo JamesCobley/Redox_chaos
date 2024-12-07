@@ -5,6 +5,10 @@
 
 using Plots, Random, CSV, DataFrames, Statistics
 
+# Optional: Switch Backend to PyPlot (if installed)
+# using PyPlot
+# pyplot()
+
 # Set the working directory (default to the current directory)
 output_dir = pwd()
 
@@ -120,7 +124,7 @@ function plot_poincare(history::Vector{Dict{String, Float64}}, proteoforms::Vect
         push!(points_x, x)
         push!(points_y, y)
     end
-    scatter(points_x, points_y, title="Poincaré Diagram", xlabel="k(t)", ylabel="k(t + T)")
+    scatter(points_x, points_y, title="Poincaré Diagram", xlabel="k(t)", ylabel="k(t+T)", xlim=(0, 8), ylim=(0, 8))
     savefig(joinpath(output_dir, "poincare_diagram.png"))
 end
 
@@ -137,7 +141,7 @@ function plot_bifurcation(r::Int, initial_proteoform::String, steps::Int, p_min:
         end
     end
 
-    scatter(bifurcation_x, bifurcation_y, title="Bifurcation Diagram", xlabel="p_jump", ylabel="Mean Oxidation State")
+    scatter(bifurcation_x, bifurcation_y, title="Bifurcation Diagram", xlabel="p_jump", ylabel="Mean Oxidation State", xlim=(0.1, 0.9), ylim=(0, 8))
     savefig(joinpath(output_dir, "bifurcation_diagram.png"))
 end
 
@@ -170,7 +174,6 @@ epsilon = 1e-5
 
 history, proteoforms, entropies, mean_oxidation_states = simulate(r, initial_proteoform, steps, p_jump)
 
-# Check type for debugging
 println("Type of history: ", typeof(history))
 
 # Compute Lyapunov Exponent
