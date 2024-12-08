@@ -93,26 +93,23 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
 
     distances = []
 
-    for _ in 1:steps
-        dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
-        push!(distances, dist)
+    for step in 1:steps
+    dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
+    push!(distances, dist)
 
-        # Update P-matrices every 100 steps
-        if _ % 100 == 0
-            P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
-        end
-
-        original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
-        perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
-
-        # Normalize perturbed state
-        perturbed_total = sum(values(perturbed_state))
-        for pf in proteoforms
-            perturbed_state[pf] /= perturbed_total
-        end
+    # Update P-matrices every 100 steps
+    if step % 100 == 0
+        P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
     end
 
-    return mean(log.(distances .+ 1e-10))
+    original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
+    perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
+
+    # Normalize the perturbed state
+    perturbed_total = sum(values(perturbed_state))
+    for pf in proteoforms
+        perturbed_state[pf] /= perturbed_total
+    end
 end
 
 # Main Execution
