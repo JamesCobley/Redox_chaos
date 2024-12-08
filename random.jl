@@ -3,7 +3,7 @@
 # Description: Simulation with 10 evolving P-matrices for distinct sub-populations,
 # explicitly setting barred transitions to zero.
 
-# Corrected Full Code with Lyapunov Exponent Calculation
+# Corrected Full Code with Proper Ends and Lyapunov Exponent
 using Plots, Random, CSV, DataFrames, Statistics
 
 # Set working directory
@@ -32,6 +32,7 @@ function find_allowed_transitions(proteoform::String, proteoforms::Vector{String
             push!(allowed, new_pf)
         end
     end
+
     return allowed
 end
 
@@ -82,7 +83,7 @@ function calc_metrics(state::Dict{String, Float64}, proteoforms::Vector{String},
     return entropy, mean_k
 end
 
-# Lyapunov Exponent Calculation
+# Compute the Lyapunov Exponent
 function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int, epsilon::Float64)
     original_state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     perturbed_state = deepcopy(original_state)
@@ -94,22 +95,25 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
     distances = []
 
     for step in 1:steps
-    dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
-    push!(distances, dist)
+        dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
+        push!(distances, dist)
 
-    # Update P-matrices every 100 steps
-    if step % 100 == 0
-        P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
+        # Update P-matrices every 100 steps
+        if step % 100 == 0
+            P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
+        end
+
+        original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
+        perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
+
+        # Normalize the perturbed state
+        perturbed_total = sum(values(perturbed_state))
+        for pf in proteoforms
+            perturbed_state[pf] /= perturbed_total
+        end
     end
 
-    original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
-    perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
-
-    # Normalize the perturbed state
-    perturbed_total = sum(values(perturbed_state))
-    for pf in proteoforms
-        perturbed_state[pf] /= perturbed_total
-    end
+    return mean(log.(distances .+ 1e-10))
 end
 
 # Main Execution
@@ -127,3 +131,4 @@ history, proteoforms, entropies, mean_oxidation_states = simulate_with_evolving_
 # Compute and Print Lyapunov Exponent
 lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, num_molecules, epsilon)
 println("Computed Lyapunov Exponent: ", lyapunov)
+
