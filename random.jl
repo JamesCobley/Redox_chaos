@@ -31,7 +31,6 @@ function find_allowed_transitions(proteoform::String, proteoforms::Vector{String
             push!(allowed, new_pf)
         end
     end
-
     return allowed
 end
 
@@ -56,7 +55,6 @@ function create_random_P_matrix(proteoforms::Vector{String})
             P[i, :] .= 1.0 / num_states
         end
     end
-
     return P
 end
 
@@ -78,7 +76,6 @@ function evolve_multiple_P_matrices(state::Dict{String, Float64}, proteoforms::V
     for pf in proteoforms
         new_state[pf] /= total_molecules
     end
-
     return new_state
 end
 
@@ -117,7 +114,7 @@ function calc_metrics(state::Dict{String, Float64}, proteoforms::Vector{String},
     return entropy, mean_k
 end
 
-# Compute the Lyapunov Exponent
+# Compute Lyapunov Exponent
 function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int, epsilon::Float64)
     original_state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     perturbed_state = deepcopy(original_state)
@@ -132,14 +129,6 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
         dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
         push!(distances, max(dist, 1e-10))
 
-        # Check for NaN and print debug info
-        if isnan(dist)
-            println("NaN detected at step $step")
-            println("Original State: ", original_state)
-            println("Perturbed State: ", perturbed_state)
-            return NaN
-        end
-
         if step % 100 == 0
             P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
         end
@@ -147,21 +136,33 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
         original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
         perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
 
-        # Normalize perturbed state
         perturbed_total = max(sum(values(perturbed_state)), 1e-10)
         for pf in proteoforms
             perturbed_state[pf] /= perturbed_total
         end
     end
 
-    lyapunov_exponent = mean(log.(distances))
+    return mean(log.(distances))
+end
 
-    if isnan(lyapunov_exponent)
-        println("Final NaN detected in Lyapunov Exponent Calculation.")
-        println("Distances: ", distances)
+# Visualization Functions
+function plot_final_state_distribution(state::Dict{String, Float64}, proteoforms::Vector{String})
+    oxidation_levels = [count('1', pf) for pf in proteoforms]
+    counts = [state[pf] for pf in proteoforms]
+    bar(oxidation_levels, counts, xlabel="Oxidation Level (k)", ylabel="Molecule Count", title="Final State Distribution", legend=false)
+    savefig("final_state_distribution.png")
+end
+
+function plot_poincare(history::Vector{Dict{String, Float64}}, proteoforms::Vector{String}, period::Int)
+    points_x, points_y = [], []
+    for t in 1:period:(length(history)-period)
+        x = sum(count('1', pf) * history[t][pf] for pf in proteoforms)
+        y = sum(count('1', pf) * history[t+period][pf] for pf in proteoforms)
+        push!(points_x, x)
+        push!(points_y, y)
     end
-
-    return lyapunov_exponent
+    scatter(points_x, points_y, title="Poincaré Diagram", xlabel="k(t)", ylabel="k(t+T)", legend=false)
+    savefig("poincare_diagram.png")
 end
 
 # Main Execution
@@ -179,3 +180,7 @@ history, proteoforms, entropies, mean_oxidation_states = simulate_with_evolving_
 # Compute and Print Lyapunov Exponent
 lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, num_molecules, epsilon)
 println("Computed Lyapunov Exponent: ", lyapunov)
+
+# Generate Plots
+plot_final_state_distribution(history[end], proteoforms)
+plot_poincare(history, proteoforms, 10)
