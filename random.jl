@@ -35,7 +35,7 @@ function find_allowed_transitions(proteoform::String, proteoforms::Vector{String
     return allowed
 end
 
-# Create a P-matrix with barred transitions set to 0
+# Create a P-matrix with safeguards
 function create_random_P_matrix(proteoforms::Vector{String})
     num_states = length(proteoforms)
     P = zeros(Float64, num_states, num_states)
@@ -44,13 +44,16 @@ function create_random_P_matrix(proteoforms::Vector{String})
         allowed_transitions = find_allowed_transitions(proteoforms[i], proteoforms, length(proteoforms[1]))
         for pf in allowed_transitions
             j = findfirst(x -> x == pf, proteoforms)
-            P[i, j] = rand()  # Assign random probabilities only to allowed transitions
+            P[i, j] = rand()
         end
 
-        # Normalize rows
+        # Normalize rows with safeguard
         row_sum = sum(P[i, :])
         if row_sum > 0
             P[i, :] /= row_sum
+        else
+            println("Warning: Zero-row detected in P-matrix at row $i. Fixing to uniform.")
+            P[i, :] .= 1.0 / num_states
         end
     end
 
@@ -60,7 +63,7 @@ end
 # Evolve system using multiple P-matrices
 function evolve_multiple_P_matrices(state::Dict{String, Float64}, proteoforms::Vector{String}, P_matrices::Vector{Matrix{Float64}})
     new_state = Dict(pf => 0.0 for pf in proteoforms)
-    sub_pool_size = sum(values(state)) / length(P_matrices)
+    sub_pool_size = max(sum(values(state)), 1e-10) / length(P_matrices)
 
     for (idx, P) in enumerate(P_matrices)
         for i in 1:length(proteoforms)
@@ -70,10 +73,16 @@ function evolve_multiple_P_matrices(state::Dict{String, Float64}, proteoforms::V
         end
     end
 
+    # Normalize new state
+    total_molecules = max(sum(values(new_state)), 1e-10)
+    for pf in proteoforms
+        new_state[pf] /= total_molecules
+    end
+
     return new_state
 end
 
-# Simulate the system with evolving P-matrices
+# Simulate system with evolving P-matrices
 function simulate_with_evolving_P_matrices(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int)
     state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     num_pools = 10
@@ -110,11 +119,9 @@ end
 
 # Compute the Lyapunov Exponent
 function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int, epsilon::Float64)
-    # Initialize states
     original_state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     perturbed_state = deepcopy(original_state)
 
-    # Apply Perturbation
     perturbed_state[proteoforms[2]] = min(perturbed_state[proteoforms[2]] + epsilon, num_molecules)
     perturbed_state[proteoforms[1]] = max(perturbed_state[proteoforms[1]] - epsilon, 0.0)
 
@@ -122,10 +129,10 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
     distances = []
 
     for step in 1:steps
-        # Calculate distance safely
         dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
+        push!(distances, max(dist, 1e-10))
 
-        # Check for invalid distances
+        # Check for NaN and print debug info
         if isnan(dist)
             println("NaN detected at step $step")
             println("Original State: ", original_state)
@@ -133,27 +140,22 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
             return NaN
         end
 
-        push!(distances, max(dist, 1e-10))
-
-        # Update P-matrices every 100 steps
         if step % 100 == 0
             P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
         end
 
-        # Evolve both states
         original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
         perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
 
-        # Normalize perturbed state safely
+        # Normalize perturbed state
         perturbed_total = max(sum(values(perturbed_state)), 1e-10)
         for pf in proteoforms
             perturbed_state[pf] /= perturbed_total
         end
     end
 
-    # Calculate Lyapunov Exponent Safely
     lyapunov_exponent = mean(log.(distances))
-    
+
     if isnan(lyapunov_exponent)
         println("Final NaN detected in Lyapunov Exponent Calculation.")
         println("Distances: ", distances)
