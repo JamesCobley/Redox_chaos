@@ -1,5 +1,5 @@
 # Redox_chaos
-Non-linear systems redox dynamics in the setting of cysteine redox proteoforms. 
+Non-linear systems redox dynamics in the setting of [cysteine redox proteoforms](https://onlinelibrary.wiley.com/doi/10.1002/bies.202200248). 
 
 # Coding environment
 The [Julia](https://julialang.org/)-based source code is configured to operate in a terminal environment after the [Redox_chaos](https://github.com/JamesCobley/Redox_chaos/blob/main/random.jl) repoitory has been cloned. 
