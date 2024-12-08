@@ -110,9 +110,11 @@ end
 
 # Compute the Lyapunov Exponent
 function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int, epsilon::Float64)
+    # Initialize states
     original_state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     perturbed_state = deepcopy(original_state)
 
+    # Apply Perturbation
     perturbed_state[proteoforms[2]] = min(perturbed_state[proteoforms[2]] + epsilon, num_molecules)
     perturbed_state[proteoforms[1]] = max(perturbed_state[proteoforms[1]] - epsilon, 0.0)
 
@@ -120,26 +122,44 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
     distances = []
 
     for step in 1:steps
-        # Calculate distance with safeguard
-        dist = max(sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms)), 1e-10)
-        push!(distances, dist)
+        # Calculate distance safely
+        dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
+
+        # Check for invalid distances
+        if isnan(dist)
+            println("NaN detected at step $step")
+            println("Original State: ", original_state)
+            println("Perturbed State: ", perturbed_state)
+            return NaN
+        end
+
+        push!(distances, max(dist, 1e-10))
 
         # Update P-matrices every 100 steps
         if step % 100 == 0
             P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
         end
 
+        # Evolve both states
         original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
         perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
 
-        # Normalize the perturbed state with safeguard
+        # Normalize perturbed state safely
         perturbed_total = max(sum(values(perturbed_state)), 1e-10)
         for pf in proteoforms
             perturbed_state[pf] /= perturbed_total
         end
     end
 
-    return mean(log.(distances))
+    # Calculate Lyapunov Exponent Safely
+    lyapunov_exponent = mean(log.(distances))
+    
+    if isnan(lyapunov_exponent)
+        println("Final NaN detected in Lyapunov Exponent Calculation.")
+        println("Distances: ", distances)
+    end
+
+    return lyapunov_exponent
 end
 
 # Main Execution
