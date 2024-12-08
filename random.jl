@@ -112,15 +112,16 @@ end
 function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int, epsilon::Float64)
     original_state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
     perturbed_state = deepcopy(original_state)
-    perturbed_state[proteoforms[2]] += epsilon
-    perturbed_state[proteoforms[1]] -= epsilon
+
+    perturbed_state[proteoforms[2]] = min(perturbed_state[proteoforms[2]] + epsilon, num_molecules)
+    perturbed_state[proteoforms[1]] = max(perturbed_state[proteoforms[1]] - epsilon, 0.0)
 
     P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:10]
-
     distances = []
 
     for step in 1:steps
-        dist = sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms))
+        # Calculate distance with safeguard
+        dist = max(sqrt(sum((original_state[pf] - perturbed_state[pf])^2 for pf in proteoforms)), 1e-10)
         push!(distances, dist)
 
         # Update P-matrices every 100 steps
@@ -131,14 +132,14 @@ function compute_lyapunov_exponent(r::Int, initial_proteoform::String, steps::In
         original_state = evolve_multiple_P_matrices(original_state, proteoforms, P_matrices)
         perturbed_state = evolve_multiple_P_matrices(perturbed_state, proteoforms, P_matrices)
 
-        # Normalize the perturbed state
-        perturbed_total = sum(values(perturbed_state))
+        # Normalize the perturbed state with safeguard
+        perturbed_total = max(sum(values(perturbed_state)), 1e-10)
         for pf in proteoforms
             perturbed_state[pf] /= perturbed_total
         end
     end
 
-    return mean(log.(distances .+ 1e-10))
+    return mean(log.(distances))
 end
 
 # Main Execution
