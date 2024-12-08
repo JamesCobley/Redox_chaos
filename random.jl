@@ -3,7 +3,6 @@
 # Description: Simulation with 10 evolving P-matrices for distinct sub-populations,
 # explicitly setting barred transitions to zero.
 
-# Corrected Full Code with Proper Ends and Lyapunov Exponent
 using Plots, Random, CSV, DataFrames, Statistics
 
 # Set working directory
@@ -74,6 +73,32 @@ function evolve_multiple_P_matrices(state::Dict{String, Float64}, proteoforms::V
     return new_state
 end
 
+# Simulate the system with evolving P-matrices
+function simulate_with_evolving_P_matrices(r::Int, initial_proteoform::String, steps::Int, num_molecules::Int)
+    state, proteoforms = initialize_state(r, initial_proteoform, num_molecules)
+    num_pools = 10
+    P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:num_pools]
+
+    history = Vector{Dict{String, Float64}}()
+    entropies = Float64[]
+    mean_oxidation_states = Float64[]
+
+    for t in 1:steps
+        if t % 100 == 0
+            P_matrices = [create_random_P_matrix(proteoforms) for _ in 1:num_pools]
+        end
+
+        push!(history, deepcopy(state))
+        entropy, mean_k = calc_metrics(state, proteoforms, r)
+        push!(entropies, entropy)
+        push!(mean_oxidation_states, mean_k)
+
+        state = evolve_multiple_P_matrices(state, proteoforms, P_matrices)
+    end
+
+    return history, proteoforms, entropies, mean_oxidation_states
+end
+
 # Calculate system metrics
 function calc_metrics(state::Dict{String, Float64}, proteoforms::Vector{String}, r::Int)
     total_molecules = sum(values(state))
@@ -131,4 +156,3 @@ history, proteoforms, entropies, mean_oxidation_states = simulate_with_evolving_
 # Compute and Print Lyapunov Exponent
 lyapunov = compute_lyapunov_exponent(r, initial_proteoform, steps, num_molecules, epsilon)
 println("Computed Lyapunov Exponent: ", lyapunov)
-
