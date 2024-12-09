@@ -166,10 +166,10 @@ function plot_poincare(history::Vector{Dict{String, Float64}}, proteoforms::Vect
 end
 
 # Main Execution
-r = 3
-initial_proteoform = "000"
-steps = 15_000
-num_molecules = 15_000
+r = 5
+initial_proteoform = "00000"
+steps = 10_000
+num_molecules = 10_000
 epsilon = 1e-5
 
 # Run the Simulation
