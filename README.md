@@ -9,6 +9,6 @@ The [generate_proteoforms.jl](https://github.com/JamesCobley/Redox_chaos/blob/ma
 2. Modelling a dynamical system
 The [random.jl](https://github.com/JamesCobley/Redox_chaos/blob/main/random.jl) script models a population of molecules in the R = 3 class using evolving P values.
 # Using the source code
-Install [Julia](https://julialang.org/) and clone the [Redox_chaos](https://github.com/JamesCobley/Redox_Chaos) repository into your environment.
+Install [Julia](https://julialang.org/) and clone the [Redox_chaos](https://github.com/JamesCobley/Redox_Chaos) repository into your environment. The scripts are designed to be operated in a terminal environment after installing all of the necessary packages.
 # Contact
 Please contact James Cobley (j_cobley@yahoo.com) or (jcobley001@dundee.ac.uk)
