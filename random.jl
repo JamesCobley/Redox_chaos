@@ -169,7 +169,7 @@ end
 r = 5
 initial_proteoform = "00000"
 steps = 10_000
-num_molecules = 10_000
+num_molecules = 100_000
 epsilon = 1e-5
 
 # Run the Simulation
